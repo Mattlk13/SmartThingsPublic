@@ -57,7 +57,7 @@
 
 		attribute "whiteLevel", "string"
 
-		fingerprint deviceId: "0x1101", inClusters: "0x27,0x72,0x86,0x26,0x60,0x70,0x32,0x31,0x85,0x33"
+		fingerprint deviceId: "0x1101", inClusters: "0x27,0x72,0x86,0x26,0x60,0x70,0x32,0x31,0x85,0x33", deviceJoinName: "Fibaro Light"
 	}
 
 	simulator {
@@ -455,6 +455,14 @@ def zwaveEvent(physicalgraph.zwave.commands.colorcontrolv1.CapabilityReport cmd,
 }
 
 def createEvent(physicalgraph.zwave.commands.multichannelv3.MultiChannelCmdEncap cmd, Map item1) {
+	if (cmd.commandClass == 0x6C && cmd.parameter.size >= 4) { // Supervision encapsulated Message
+		// Supervision header is 4 bytes long, two bytes dropped here are the latter two bytes of the supervision header
+		cmd.parameter = cmd.parameter.drop(2)
+		// Updated Command Class/Command now with the remaining bytes
+		cmd.commandClass = cmd.parameter[0]
+		cmd.command = cmd.parameter[1]
+		cmd.parameter = cmd.parameter.drop(2)
+	}
 	def encapsulatedCommand = cmd.encapsulatedCommand([0x26: 1, 0x30: 2, 0x32: 2, 0x33: 2]) // can specify command class versions here like in zwave.parse
 	//log.debug ("Command from endpoint ${cmd.sourceEndPoint}: ${encapsulatedCommand}")
 	if ((cmd.sourceEndPoint >= 1) && (cmd.sourceEndPoint <= 5)) { // we don't need color report

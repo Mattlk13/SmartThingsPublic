@@ -20,9 +20,12 @@ metadata {
 		capability "Sensor"
 		capability "Health Check"
 
-		fingerprint mfr: "018C", prod: "0061", model: "0001", deviceJoinName: "Dawon Temp/Humidity Sensor" // addChildDevice "Dawon Smart Switch${endpoint}" 1
-		fingerprint mfr: "018C", prod: "0062", model: "0001", deviceJoinName: "Dawon Temp/Humidity Sensor" // addChildDevice "Dawon Smart Switch${endpoint}" 2
-		fingerprint mfr: "018C", prod: "0063", model: "0001", deviceJoinName: "Dawon Temp/Humidity Sensor" // addChildDevice "Dawon Smart Switch${endpoint}" 3
+		fingerprint mfr: "018C", prod: "0061", model: "0001", deviceJoinName: "Dawon Multipurpose Sensor"	// KR // addChildDevice "Dawon Smart Switch${endpoint}" 1 //Dawon Temp/Humidity Sensor
+		fingerprint mfr: "018C", prod: "0062", model: "0001", deviceJoinName: "Dawon Multipurpose Sensor"	// KR // addChildDevice "Dawon Smart Switch${endpoint}" 2 //Dawon Temp/Humidity Sensor
+		fingerprint mfr: "018C", prod: "0063", model: "0001", deviceJoinName: "Dawon Multipurpose Sensor"	// KR // addChildDevice "Dawon Smart Switch${endpoint}" 3 //Dawon Temp/Humidity Sensor
+		fingerprint mfr: "018C", prod: "0064", model: "0001", deviceJoinName: "Dawon Multipurpose Sensor"	// US // addChildDevice "Dawon Smart Switch${endpoint}" 1 //Dawon Temp/Humidity Sensor
+		fingerprint mfr: "018C", prod: "0065", model: "0001", deviceJoinName: "Dawon Multipurpose Sensor"	// US // addChildDevice "Dawon Smart Switch${endpoint}" 2 //Dawon Temp/Humidity Sensor
+		fingerprint mfr: "018C", prod: "0066", model: "0001", deviceJoinName: "Dawon Multipurpose Sensor"	// US // addChildDevice "Dawon Smart Switch${endpoint}" 3 //Dawon Temp/Humidity Sensor
 	}
 
 	preferences {
@@ -158,6 +161,14 @@ def zwaveEvent(physicalgraph.zwave.commands.securityv1.SecurityMessageEncapsulat
 }
 
 def zwaveEvent(physicalgraph.zwave.commands.multichannelv3.MultiChannelCmdEncap cmd, endpoint = null) {
+	if (cmd.commandClass == 0x6C && cmd.parameter.size >= 4) { // Supervision encapsulated Message
+		// Supervision header is 4 bytes long, two bytes dropped here are the latter two bytes of the supervision header
+		cmd.parameter = cmd.parameter.drop(2)
+		// Updated Command Class/Command now with the remaining bytes
+		cmd.commandClass = cmd.parameter[0]
+		cmd.command = cmd.parameter[1]
+		cmd.parameter = cmd.parameter.drop(2)
+	}
 	log.info "zwaveEvent MultiChannelCmdEncap called: '${cmd}'  endpoint '${endpoint}'"
 	def encapsulatedCommand = cmd.encapsulatedCommand()
 	log.debug "MultiChannelCmdEncap: encapsulatedCommand '${encapsulatedCommand}'"
@@ -324,11 +335,11 @@ private changeSwitch(endpoint, value) {
 }
 
 private getNumberOfChildFromModel() {
-	if (zwaveInfo.prod.equals("0063")) {
+	if ((zwaveInfo.prod.equals("0063")) || (zwaveInfo.prod.equals("0066"))) {
 		return 3
-	} else if (zwaveInfo.prod.equals("0062")) {
+	} else if ((zwaveInfo.prod.equals("0062")) || (zwaveInfo.prod.equals("0065"))) {
 		return 2
-	} else if (zwaveInfo.prod.equals("0061")) {
+	} else if ((zwaveInfo.prod.equals("0061")) || (zwaveInfo.prod.equals("0064"))) {
 		return 1
 	} else {
 		return 0
